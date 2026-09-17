@@ -217,14 +217,14 @@
       transition: none !important;
     }
 
-    .level-actions.is-resetting .previous-button {
+    .control-assets-ready .level-actions.is-resetting .previous-button {
       background-image: url("assets/ui/ui-previous.webp") !important;
       filter: saturate(.74) drop-shadow(0 3px 6px rgba(37, 48, 51, .07)) !important;
       transform: none !important;
       transition: none !important;
     }
 
-    .level-actions.is-resetting .skip-button {
+    .control-assets-ready .level-actions.is-resetting .skip-button {
       background-image: url("assets/ui/ui-skip.webp") !important;
       filter: saturate(.74) drop-shadow(0 3px 6px rgba(37, 48, 51, .07)) !important;
       transform: none !important;
@@ -256,7 +256,7 @@
       padding: 0 12px 0 35px;
       border: 0;
       color: #253033;
-      background: transparent url("assets/ui/ui-previous.webp") center / 100% 100% no-repeat;
+      background: transparent;
       font: inherit;
       font-size: 12px;
       font-weight: 850;
@@ -266,6 +266,10 @@
       text-shadow: 0 1px 0 rgba(255, 255, 255, .9);
       filter: saturate(.74) drop-shadow(0 3px 6px rgba(37, 48, 51, .07));
       transition: opacity .18s ease, filter .18s ease, transform .12s ease;
+    }
+
+    .control-assets-ready .previous-button {
+      background: transparent url("assets/ui/ui-previous.webp") center / 100% 100% no-repeat;
     }
 
     .previous-button::before {
@@ -280,7 +284,7 @@
       transform: translateY(-50%) rotate(45deg);
     }
 
-    .previous-button:active:not(:disabled) {
+    .control-assets-ready .previous-button:active:not(:disabled) {
       background-image: url("assets/ui/ui-previous-pressed.webp");
       filter: drop-shadow(0 2px 4px rgba(37, 48, 51, .08));
       transform: translateY(1px);
@@ -293,7 +297,7 @@
       padding: 0 33px 0 11px;
       border: 0;
       color: #253033;
-      background: transparent url("assets/ui/ui-skip.webp") center / 100% 100% no-repeat;
+      background: transparent;
       font: inherit;
       font-size: 12px;
       font-weight: 850;
@@ -302,6 +306,10 @@
       text-shadow: 0 1px 0 rgba(255, 255, 255, .9);
       filter: saturate(.74) drop-shadow(0 3px 6px rgba(37, 48, 51, .07));
       transition: opacity .18s ease, filter .18s ease, transform .12s ease;
+    }
+
+    .control-assets-ready .skip-button {
+      background: transparent url("assets/ui/ui-skip.webp") center / 100% 100% no-repeat;
     }
 
     .skip-button svg {
@@ -315,7 +323,7 @@
       transform: translateY(-50%);
     }
 
-    .skip-button:active:not(:disabled) {
+    .control-assets-ready .skip-button:active:not(:disabled) {
       background-image: url("assets/ui/ui-skip-pressed.webp");
       filter: drop-shadow(0 2px 4px rgba(37, 48, 51, .08));
       transform: translateY(1px);
@@ -665,12 +673,15 @@
     }
 
     .start-brand p {
-      max-width: 25em;
+      max-width: min(92vw, 21em);
       margin: 12px 0 0;
       color: rgba(255, 255, 255, .94);
       font-size: clamp(14px, 3.7vw, 18px);
       line-height: 1.55;
       font-weight: 750;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-all;
     }
 
     .start-actions {
@@ -1025,11 +1036,12 @@
       }
 
       .start-brand p {
-        width: 100%;
-        max-width: 100%;
+        width: min(100%, 340px);
+        max-width: calc(100vw - 56px);
         font-size: 14px;
         line-height: 1.45;
         overflow-wrap: anywhere;
+        word-break: break-all;
       }
     }
 
@@ -1168,7 +1180,7 @@
       <div class="level-actions">
         <div class="level-action-group">
           <button class="icon-button home-button" id="homeBtn" type="button" title="返回首页" aria-label="返回首页">
-            <img src="assets/ui/ui-home.webp" alt="" aria-hidden="true" decoding="async">
+            <img data-src="assets/ui/ui-home.webp" alt="" aria-hidden="true" decoding="async">
           </button>
           <button class="previous-button" id="previousBtn" type="button" aria-label="返回上一关">上一关</button>
         </div>
@@ -1180,7 +1192,7 @@
             </svg>
           </button>
           <button class="icon-button restart-button" id="restartBtn" type="button" title="重新开始本关" aria-label="重新开始本关">
-            <img src="assets/ui/ui-restart.webp" alt="" aria-hidden="true" decoding="async">
+            <img data-src="assets/ui/ui-restart.webp" alt="" aria-hidden="true" decoding="async">
           </button>
         </div>
       </div>
@@ -1192,7 +1204,7 @@
 
     <section class="bottom-bar">
       <div class="tool-chip">
-        <img class="tool-preview" id="toolImage" src="assets/tools/tool-cotton-swab.webp" alt="" aria-hidden="true" decoding="async">
+        <img class="tool-preview" id="toolImage" alt="" aria-hidden="true" decoding="async">
         <span id="toolName">触感装置</span>
       </div>
       <div class="combo" id="combo">x1</div>
@@ -1228,10 +1240,10 @@
       <source media="(orientation: landscape)" srcset="assets/start/start-cover-landscape.webp">
       <img src="assets/start/start-cover-portrait.webp" alt="" fetchpriority="high" decoding="async">
     </picture>
-    <img class="start-effects" src="assets/start/start-effects.webp" alt="" aria-hidden="true" decoding="async">
+    <img class="start-effects" src="assets/start/start-effects.webp" alt="" aria-hidden="true" decoding="async" fetchpriority="low">
     <div class="start-shell">
       <div class="start-brand">
-        <img class="start-emblem" src="assets/start/start-emblem.webp" alt="" aria-hidden="true" decoding="async">
+        <img class="start-emblem" src="assets/start/start-emblem.webp" alt="" aria-hidden="true" decoding="async" fetchpriority="low">
         <span class="start-kicker">沉浸式解压工坊</span>
         <h1 id="startTitle">爽感制造所</h1>
         <p>刮掉、拔出、擦净、抛光。每一次操作，都要爽到彻底。</p>
@@ -1290,6 +1302,16 @@
       const skipBtnLabel = document.getElementById("skipBtnLabel");
       const restartBtn = document.getElementById("restartBtn");
       const levelActionsEl = document.querySelector(".level-actions");
+      let controlAssetsReady = false;
+
+      function ensureControlAssets() {
+        if (controlAssetsReady) return;
+        controlAssetsReady = true;
+        document.documentElement.classList.add("control-assets-ready");
+        for (const image of document.querySelectorAll(".level-actions img[data-src]")) {
+          image.src = image.dataset.src;
+        }
+      }
 
       const storageKey = "satisfaction-factory-v1";
       const campaignVersion = 15;
@@ -1570,7 +1592,7 @@
         backgroundCacheKey = "";
       }
 
-      function loadImageAsset(src) {
+      function loadImageAsset(src, priority = "auto") {
         const image = new Image();
         const asset = { image, ready: false, failed: false };
         image.onload = () => {
@@ -1580,27 +1602,45 @@
         };
         image.onerror = () => { asset.failed = true; };
         image.decoding = "async";
+        try { image.fetchPriority = priority; } catch (_) {}
         image.src = src;
         return asset;
       }
 
       const levelImageAssets = levels.map(() => ({ clean: null, dirty: null }));
 
-      function ensureLevelAsset(index, kind) {
+      function ensureLevelAsset(index, kind, priority = "auto") {
         if (index < 0 || index >= totalLevels) return null;
         if (levelImageAssets[index][kind]) return levelImageAssets[index][kind];
         const number = String(levels[index].scene).padStart(2, "0");
-        const asset = loadImageAsset(`assets/scenes/level-${number}-${kind}.webp`);
+        const asset = loadImageAsset(`assets/scenes/level-${number}-${kind}.webp`, priority);
         levelImageAssets[index][kind] = asset;
         return asset;
       }
 
+      let preloadGeneration = 0;
+      let preloadTimer = 0;
+      let preloadIdleHandle = 0;
+
+      function cancelIdlePreload() {
+        preloadGeneration++;
+        clearTimeout(preloadTimer);
+        preloadTimer = 0;
+        if (preloadIdleHandle && window.cancelIdleCallback) window.cancelIdleCallback(preloadIdleHandle);
+        preloadIdleHandle = 0;
+      }
+
+      function ensureLevelRuntimeAssets(levelIndex, priority = "auto") {
+        if (levelIndex < 0 || levelIndex >= totalLevels) return;
+        const level = levels[levelIndex];
+        ensureLevelAsset(levelIndex, "clean", priority);
+        if (!interactiveOnlyStyles?.has(level.careStyle)) ensureLevelAsset(levelIndex, "dirty", priority);
+      }
+
       function prepareLevelAssets(index) {
-        const keep = new Set([index - 1, index, index + 1].filter(i => i >= 0 && i < totalLevels));
-        for (const levelIndex of keep) {
-          ensureLevelAsset(levelIndex, "clean");
-          if (!interactiveOnlyStyles?.has(levels[levelIndex].careStyle)) ensureLevelAsset(levelIndex, "dirty");
-        }
+        cancelIdlePreload();
+        ensureLevelRuntimeAssets(index, "high");
+        const keep = new Set([index]);
         for (let i = 0; i < levelImageAssets.length; i++) {
           if (keep.has(i)) continue;
           for (const kind of ["clean", "dirty"]) {
@@ -1614,6 +1654,27 @@
         }
       }
 
+      function scheduleIdlePreload(levelIndex) {
+        if (levelIndex < 0 || levelIndex >= totalLevels) return;
+        const generation = preloadGeneration;
+        const run = () => {
+          preloadIdleHandle = 0;
+          if (generation !== preloadGeneration || state.scene !== "play") return;
+          ensureLevelRuntimeAssets(levelIndex, "low");
+          prepareInteractiveAssets(levels[levelIndex].careStyle, "low");
+          ensureToolAsset(toolAssetKeys[levelIndex] || "care-tweezers", "low");
+        };
+        preloadTimer = setTimeout(() => {
+          preloadTimer = 0;
+          if (generation !== preloadGeneration || state.scene !== "play") return;
+          if (window.requestIdleCallback) {
+            preloadIdleHandle = window.requestIdleCallback(run, { timeout: 1800 });
+          } else {
+            setTimeout(run, 120);
+          }
+        }, lowPowerDevice ? 1400 : 700);
+      }
+
       const toolAssetKeys = [
         "cotton-swab", "nose-scissors", "ear-pick", "tooth-polisher",
         "care-tweezers", "adhesive-scraper", "squeegee", "care-tweezers",
@@ -1621,8 +1682,8 @@
         "tooth-polisher", "screen-scraper"
       ];
       const toolAssets = Object.create(null);
-      function ensureToolAsset(key) {
-        if (!toolAssets[key]) toolAssets[key] = loadImageAsset(`assets/tools/tool-${key}.webp`);
+      function ensureToolAsset(key, priority = "auto") {
+        if (!toolAssets[key]) toolAssets[key] = loadImageAsset(`assets/tools/tool-${key}.webp`, priority);
         return toolAssets[key];
       }
 
@@ -1637,13 +1698,13 @@
       };
       const interactiveAssets = Object.create(null);
 
-      function ensureInteractiveAsset(name) {
-        if (!interactiveAssets[name]) interactiveAssets[name] = loadImageAsset(`assets/interactive/${name}.webp`);
+      function ensureInteractiveAsset(name, priority = "auto") {
+        if (!interactiveAssets[name]) interactiveAssets[name] = loadImageAsset(`assets/interactive/${name}.webp`, priority);
         return interactiveAssets[name];
       }
 
-      function prepareInteractiveAssets(careStyle) {
-        for (const name of interactiveAssetSources[careStyle] || []) ensureInteractiveAsset(name);
+      function prepareInteractiveAssets(careStyle, priority = "auto") {
+        for (const name of interactiveAssetSources[careStyle] || []) ensureInteractiveAsset(name, priority);
       }
 
       function getInteractiveAsset(name) {
@@ -2423,6 +2484,7 @@
       }
 
       function buildLevel(index, keepScene, progressSnapshot = null) {
+        ensureControlAssets();
         const level = levels[index % levels.length];
         const localRound = Math.floor(index / levels.length);
         const difficulty = 1 + Math.min(1.5, index * .055);
@@ -2735,15 +2797,15 @@
               item.extracting = false;
             }
           }
-          prepareInteractiveAssets(level.careStyle);
+          prepareInteractiveAssets(level.careStyle, "high");
         }
 
         restoreLevelProgress(progressSnapshot);
-        ensureToolAsset(getActiveToolKey());
-        if (level.index < totalLevels - 1) ensureToolAsset(toolAssetKeys[level.index + 1]);
+        ensureToolAsset(getActiveToolKey(), "high");
         setTool(level);
         updateHud();
         if (state.levelIndex > 0) tapAds.preload("skipLevel");
+        scheduleIdlePreload(level.index + 1);
         placeGesture();
       }
 
@@ -2894,6 +2956,7 @@
         resetInputAfterAd();
         finishOverlay.classList.add("hidden");
         if (state.levelIndex >= totalLevels - 1) {
+          cancelIdlePreload();
           state.levelIndex = 0;
           state.scene = "start";
           state.level = null;
@@ -5620,6 +5683,7 @@
         if (state.scene !== "play" || state.completed) return;
         unlockAudio(true);
         stopToolLoop();
+        cancelIdlePreload();
         state.pointer.down = false;
         state.pointerId = null;
         state.scene = "start";
