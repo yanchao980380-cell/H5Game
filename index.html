@@ -1594,13 +1594,27 @@
 
       function loadImageAsset(src, priority = "auto") {
         const image = new Image();
-        const asset = { image, ready: false, failed: false };
-        image.onload = () => {
-          asset.ready = true;
-          asset.failed = false;
-          invalidateVisualCaches();
-        };
-        image.onerror = () => { asset.failed = true; };
+        const asset = { image, ready: false, failed: false, promise: null };
+        asset.promise = new Promise(resolve => {
+          const markReady = () => {
+            asset.ready = true;
+            asset.failed = false;
+            invalidateVisualCaches();
+            resolve(asset);
+          };
+          const markFailed = () => {
+            asset.failed = true;
+            resolve(asset);
+          };
+          image.onload = () => {
+            if (image.decode) {
+              image.decode().then(markReady, markReady);
+            } else {
+              markReady();
+            }
+          };
+          image.onerror = markFailed;
+        });
         image.decoding = "async";
         try { image.fetchPriority = priority; } catch (_) {}
         image.src = src;
@@ -1631,16 +1645,17 @@
       }
 
       function ensureLevelRuntimeAssets(levelIndex, priority = "auto") {
-        if (levelIndex < 0 || levelIndex >= totalLevels) return;
+        if (levelIndex < 0 || levelIndex >= totalLevels) return [];
         const level = levels[levelIndex];
-        ensureLevelAsset(levelIndex, "clean", priority);
-        if (!interactiveOnlyStyles?.has(level.careStyle)) ensureLevelAsset(levelIndex, "dirty", priority);
+        const assets = [ensureLevelAsset(levelIndex, "clean", priority)];
+        if (!interactiveOnlyStyles?.has(level.careStyle)) assets.push(ensureLevelAsset(levelIndex, "dirty", priority));
+        return assets.filter(Boolean);
       }
 
       function prepareLevelAssets(index) {
         cancelIdlePreload();
         ensureLevelRuntimeAssets(index, "high");
-        const keep = new Set([index]);
+        const keep = new Set([index - 1, index, index + 1, index + 2].filter(i => i >= 0 && i < totalLevels));
         for (let i = 0; i < levelImageAssets.length; i++) {
           if (keep.has(i)) continue;
           for (const kind of ["clean", "dirty"]) {
@@ -1657,12 +1672,16 @@
       function scheduleIdlePreload(levelIndex) {
         if (levelIndex < 0 || levelIndex >= totalLevels) return;
         const generation = preloadGeneration;
-        const run = () => {
+        const run = async () => {
           preloadIdleHandle = 0;
           if (generation !== preloadGeneration || state.scene !== "play") return;
-          ensureLevelRuntimeAssets(levelIndex, "low");
-          prepareInteractiveAssets(levels[levelIndex].careStyle, "low");
-          ensureToolAsset(toolAssetKeys[levelIndex] || "care-tweezers", "low");
+          for (let i = levelIndex; i < Math.min(totalLevels, levelIndex + 2); i++) {
+            if (generation !== preloadGeneration || state.scene !== "play") return;
+            const sceneAssets = ensureLevelRuntimeAssets(i, "low");
+            prepareInteractiveAssets(levels[i].careStyle, "low");
+            ensureToolAsset(toolAssetKeys[i] || "care-tweezers", "low");
+            await Promise.all(sceneAssets.map(asset => asset.promise).filter(Boolean));
+          }
         };
         preloadTimer = setTimeout(() => {
           preloadTimer = 0;
@@ -1673,6 +1692,19 @@
             setTimeout(run, 120);
           }
         }, lowPowerDevice ? 1400 : 700);
+      }
+
+      function scheduleHomeLevelWarmup() {
+        const generation = preloadGeneration;
+        setTimeout(() => {
+          if (generation !== preloadGeneration || state.scene !== "start") return;
+          const warm = () => {
+            if (generation !== preloadGeneration || state.scene !== "start") return;
+            ensureLevelRuntimeAssets(state.levelIndex, "low");
+          };
+          if (window.requestIdleCallback) window.requestIdleCallback(warm, { timeout: 2200 });
+          else warm();
+        }, lowPowerDevice ? 1600 : 900);
       }
 
       const toolAssetKeys = [
@@ -2962,6 +2994,7 @@
           state.level = null;
           state.data = null;
           startOverlay.classList.remove("hidden");
+          scheduleHomeLevelWarmup();
           updateHud();
         } else {
           state.levelIndex += 1;
@@ -5691,6 +5724,7 @@
         state.data = null;
         finishOverlay.classList.add("hidden");
         startOverlay.classList.remove("hidden");
+        scheduleHomeLevelWarmup();
         save();
         updateHud();
         tone(360, .06, "sine", .04);
@@ -5834,6 +5868,7 @@
       loadSave();
       resize();
       updateHud();
+      scheduleHomeLevelWarmup();
       requestAnimationFrame(tick);
     })();
   </script>
