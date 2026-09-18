@@ -2925,7 +2925,7 @@
       }
 
       function adsAllowedForCurrentProgress() {
-        return state.levelIndex > 0;
+        return true;
       }
 
       function resetInputAfterAd() {
@@ -2945,7 +2945,7 @@
           return true;
         }
         if (!adsAllowedForCurrentProgress()) {
-          showAdNotice("完成首关后即可使用");
+          showAdNotice("当前暂不可用，请稍后再试");
           return false;
         }
         if (!tapAds.canUse(slot)) {
