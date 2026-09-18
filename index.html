@@ -1652,6 +1652,30 @@
         return assets.filter(Boolean);
       }
 
+      async function waitForLevelRuntimeAssets(levelIndex, priority = "high") {
+        const assets = ensureLevelRuntimeAssets(levelIndex, priority);
+        await Promise.all(assets.map(asset => asset.promise).filter(Boolean));
+        return assets.every(asset => asset.ready && !asset.failed);
+      }
+
+      async function buildPreparedLevel(index, keepScene = false, progressSnapshot = null) {
+        const target = clamp(index, 0, totalLevels - 1);
+        if (!levelImageAssets[target]?.clean?.ready) {
+          state.transitioning = true;
+          state.adNotice = "准备画面中";
+          state.adNoticeUntil = performance.now() + 2200;
+          state.hudSignature = "";
+          updateHud();
+        }
+        await waitForLevelRuntimeAssets(target, "high");
+        state.transitioning = false;
+        state.adNotice = "";
+        state.adNoticeUntil = 0;
+        state.levelIndex = target;
+        buildLevel(target, keepScene, progressSnapshot);
+        return true;
+      }
+
       function prepareLevelAssets(index) {
         cancelIdlePreload();
         ensureLevelRuntimeAssets(index, "high");
@@ -1698,9 +1722,13 @@
         const generation = preloadGeneration;
         setTimeout(() => {
           if (generation !== preloadGeneration || state.scene !== "start") return;
-          const warm = () => {
+          const warm = async () => {
             if (generation !== preloadGeneration || state.scene !== "start") return;
-            ensureLevelRuntimeAssets(state.levelIndex, "low");
+            for (let i = state.levelIndex; i < Math.min(totalLevels, state.levelIndex + 3); i++) {
+              if (generation !== preloadGeneration || state.scene !== "start") return;
+              const assets = ensureLevelRuntimeAssets(i, "low");
+              await Promise.all(assets.map(asset => asset.promise).filter(Boolean));
+            }
           };
           if (window.requestIdleCallback) window.requestIdleCallback(warm, { timeout: 2200 });
           else warm();
@@ -1788,6 +1816,7 @@
         completedAt: 0,
         completionToken: 0,
         adPending: false,
+        transitioning: false,
         lastReward: 0,
         rewardDoubled: false,
         adNotice: "",
@@ -2981,8 +3010,8 @@
         return true;
       }
 
-      function skipCurrentLevel() {
-        if (state.scene !== "play" || state.completed || state.adPending) return;
+      async function skipCurrentLevel() {
+        if (state.scene !== "play" || state.completed || state.adPending || state.transitioning) return;
         resetLevelActionStyles(skipBtn);
         unlockAudio(true);
         resetInputAfterAd();
@@ -2997,8 +3026,7 @@
           scheduleHomeLevelWarmup();
           updateHud();
         } else {
-          state.levelIndex += 1;
-          buildLevel(state.levelIndex, false);
+          await buildPreparedLevel(state.levelIndex + 1, false);
         }
         save();
         tone(620, .065, "triangle", .045);
@@ -3026,7 +3054,7 @@
           Math.floor(state.coins), state.scene, state.levelIndex,
           Math.round(clamp(state.progress, 0, 1) * 100), state.combo,
           comboOn, state.soundOn, state.hasInteracted, state.completed, toolKey,
-          state.adPending, state.rewardDoubled, state.lastReward, state.adNotice,
+          state.adPending, state.transitioning, state.rewardDoubled, state.lastReward, state.adNotice,
           skipUsesAd, doubleUsesAd, adsAllowed
         ].join("|");
         if (signature === state.hudSignature) return;
@@ -3042,13 +3070,15 @@
         comboEl.textContent = `x${state.combo}`;
         startBtnLabel.textContent = state.levelIndex > 0 ? "继续上次进度" : "开始解压";
         startFirstBtn.hidden = state.levelIndex <= 0;
-        const controlsLocked = state.scene !== "play" || state.completed || state.adPending;
+        const controlsLocked = state.scene !== "play" || state.completed || state.adPending || state.transitioning;
         const isFirstLevel = state.levelIndex <= 0;
         previousBtn.hidden = isFirstLevel;
         previousBtn.disabled = controlsLocked || isFirstLevel;
         homeBtn.disabled = controlsLocked;
         skipBtnLabel.textContent = state.adPending
           ? "广告加载中"
+          : state.transitioning
+            ? "准备中"
           : tapAds.isTapRuntime()
             ? skipUsesAd ? "看视频跳过" : "广告暂不可用"
             : "跳过此关";
@@ -5683,34 +5713,38 @@
         }
       }
 
-      function startGame() {
+      async function startGame() {
+        if (state.transitioning) return;
         unlockAudio(true);
-        startOverlay.classList.add("hidden");
         finishOverlay.classList.add("hidden");
-        buildLevel(state.levelIndex, false);
+        await buildPreparedLevel(state.levelIndex, false);
+        startOverlay.classList.add("hidden");
       }
 
       document.getElementById("startBtn").addEventListener("click", startGame);
-      startFirstBtn.addEventListener("click", () => {
+      startFirstBtn.addEventListener("click", async () => {
+        if (state.transitioning) return;
         unlockAudio(true);
         state.levelIndex = 0;
-        startOverlay.classList.add("hidden");
         finishOverlay.classList.add("hidden");
-        buildLevel(0, false);
+        await buildPreparedLevel(0, false);
+        startOverlay.classList.add("hidden");
         save();
         tone(480, .07, "triangle", .045);
       });
-      nextBtn.addEventListener("click", () => {
+      nextBtn.addEventListener("click", async () => {
+        if (state.transitioning) return;
         unlockAudio(true);
+        const target = state.levelIndex >= totalLevels - 1 ? 0 : state.levelIndex + 1;
+        await buildPreparedLevel(target, false);
         finishOverlay.classList.add("hidden");
-        state.levelIndex = state.levelIndex >= totalLevels - 1 ? 0 : state.levelIndex + 1;
-        buildLevel(state.levelIndex, false);
         save();
       });
-      document.getElementById("replayBtn").addEventListener("click", () => {
+      document.getElementById("replayBtn").addEventListener("click", async () => {
+        if (state.transitioning) return;
         unlockAudio(true);
+        await buildPreparedLevel(state.levelIndex, false);
         finishOverlay.classList.add("hidden");
-        buildLevel(state.levelIndex, false);
       });
       homeBtn.addEventListener("click", () => {
         if (state.scene !== "play" || state.completed) return;
@@ -5729,19 +5763,18 @@
         updateHud();
         tone(360, .06, "sine", .04);
       });
-      previousBtn.addEventListener("click", () => {
-        if (state.scene !== "play" || state.completed || state.levelIndex <= 0) return;
+      previousBtn.addEventListener("click", async () => {
+        if (state.scene !== "play" || state.completed || state.transitioning || state.levelIndex <= 0) return;
         resetLevelActionStyles(previousBtn);
         unlockAudio(true);
         stopToolLoop();
         finishOverlay.classList.add("hidden");
-        state.levelIndex -= 1;
-        buildLevel(state.levelIndex, false);
+        await buildPreparedLevel(state.levelIndex - 1, false);
         save();
         tone(420, .06, "sine", .045);
       });
       skipBtn.addEventListener("click", () => {
-        if (state.scene !== "play" || state.completed || state.adPending) return;
+        if (state.scene !== "play" || state.completed || state.adPending || state.transitioning) return;
         unlockAudio(true);
         if (tapAds.isTapRuntime()) {
           runRewardedAction("skipLevel", skipCurrentLevel);
@@ -5754,13 +5787,13 @@
         unlockAudio(true);
         runRewardedAction("doubleCoins", doubleLastReward);
       });
-      restartBtn.addEventListener("click", () => {
-        if (state.scene !== "play" || state.completed) return;
+      restartBtn.addEventListener("click", async () => {
+        if (state.scene !== "play" || state.completed || state.transitioning) return;
         resetLevelActionStyles(restartBtn);
         unlockAudio(true);
         stopToolLoop();
         finishOverlay.classList.add("hidden");
-        buildLevel(state.levelIndex, false);
+        await buildPreparedLevel(state.levelIndex, false);
         save();
         tone(520, .055, "triangle", .045);
       });
